@@ -12,21 +12,24 @@ hi atosh
     <input type="SUBMIT"> 
 </form>
 <?php
-echo'           
-
-d<input type="text" placeholder="Name" required > 
-// <p onClick="window.location.href='www.'"> nobiuyf</p>
-
-'
-
-;
+echo"";
 
 ?>
-funct add(){
-    int a,b;
+<?php
+function add(){
+    // int a,b;
     //code 
     return 0;
 }
 add();
+function sum($a ,$b){
+    $result =$a+$b;
+    return $result; 
+}
+$m=5;
+$n=6;
+$a=sum($m,$n);
+echo "result-".$a ." dayal";
+?>
 
 
