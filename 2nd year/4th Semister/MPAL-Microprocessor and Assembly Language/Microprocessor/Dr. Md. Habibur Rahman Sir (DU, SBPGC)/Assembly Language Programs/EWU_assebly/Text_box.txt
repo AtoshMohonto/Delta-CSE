@@ -1,0 +1,26 @@
+    mov cx,10
+l1: mov ah,02h
+    mov dl,' '
+    int 21h 
+    loop l1
+
+mov cx,10
+l:mov ah,02h
+mov dl,196
+int 21h 
+loop l
+mov ah,02h
+mov dl,191
+int 21h
+mov cx,10
+l3:
+mov dl,10
+int 21h
+mov dl,08
+int 21h
+;mov dl,08
+;int 21h
+mov dl,179
+int 21h
+
+loop l3

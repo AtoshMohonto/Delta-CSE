@@ -1,0 +1,121 @@
+; a program to find the largest number from N numbers
+
+display macro msg			; display - user defined macro
+	mov ah, 09h				; display string function
+	mov dx, offset msg		; initialize dx to msg
+	int 21h					; call DOS service
+endm
+
+readnum macro num
+    mov num,0
+   	agn:mov ah, 01h
+    int 21h         ; 01 DOS function call to read a character
+    cmp al,0dh
+    je last
+    sub al, '0'     ; convert the ASCII char. into digit
+    mov cl,al
+    mov bx, 0ah
+    mov ax,num
+    mul bx          ; multiply the digit by 10
+    mov num, ax     ; save the result in num variable
+    mov ch,0
+    add num,cx
+    jmp agn:
+last:
+
+endm
+
+exit macro
+     mov ah, 4ch
+     mov al, 0h
+     int 21h
+endm
+
+_DATA segment				; data - name of user defined segment
+	cr	equ	0dh			    ; ASCII code for carriage return
+	lf	equ	0ah			    ; ASCII code for line feed
+    msg1 db cr, lf, 'Enter a number (two digit) : $'
+	msg2 db cr, lf, 'The binary value of the given number: $'
+	;msg3 db cr, lf, 'The largest number is: $'
+	msg4 db cr, lf, lf,	'Now press a if you want to type again or x to exit - $'
+    msg5 db cr, lf, 'You pressed x so the program has exit. $'
+	msg6 db cr, lf, 'Ah! Wrong choice! Its out of range! $'
+	N      dw  ?
+	;temp   db  ?
+	;ntable db  100 dup (?)		; number table
+	;result db  20  dup ('$')
+_DATA ends
+
+
+_CODE segment
+    assume cs:_CODE, ds: _DATA 
+start: mov ax, _DATA
+       mov ds, ax				
+ st:
+    display msg1
+    readnum N					; How many numbers
+   	
+        ; print result in binary:
+        display msg2
+        mov bx,[N]
+        mov cx, 16
+print:  mov ah, 2   ; print function.
+        mov dl, '0'
+        test bx, 8000h  ; test first bit.
+        jz zero
+        mov dl, '1'
+zero:   int 21h
+        shl bx, 1
+        loop print
+
+        ; print binary suffix:
+        mov dl, 'b'
+        int 21h   	
+   	    
+again:
+     display msg4        ; Now press a if you want to type again or x to exit -
+     mov ah, 01h         ; get input from keyboard
+     int 21h
+     cmp al, 'a'         ; compare with ASCII value of a
+     je st            ; if equal jump to start function
+     cmp al, 'x'         ; compare with ASCII value of x
+     je exit             ; if equal jump to exit function
+
+wrong:
+     display msg6		; Ah! Wrong choice! Its out of range!
+     jmp again	     
+
+exit:      
+     display msg5        ; You pressed x so the program has exit.
+     exit                ; exit program		
+
+hex2asc proc near				; function to convert hexadecimal to ASCII
+	pusha					; save all registers
+	mov cx, 00h				; counter for intermediate data pushed
+	mov bx, 0ah				; load 10 in bl
+
+rpt1:
+	mov dx, 00h
+	div bx					; divide deci by 10
+	add dl, '0'				; convert remainder to ASCII
+	push dx					; store ASCII digit on to the stack
+	inc cx					; update counter
+	cmp ax, 0ah				; is sum less than or equal to 10
+	jge rpt1					; if yes, perform conversion
+	add al, '0'				; convert last digit to ASCII
+	mov [si], al				; store last digit
+
+rpt2:
+	pop ax					; pop data
+	inc si					; advance result string pointer
+	mov [si], al				; store in result
+	loop rpt2
+	inc si
+	mov al, '$'
+	mov [si], al				; append end of string
+	popa						; restore the registers
+	ret						; return to the main function
+hex2asc endp					; end of procedure
+
+endm							; end of segment
+end start						; end of program

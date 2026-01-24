@@ -1,0 +1,172 @@
+; 6.2 problem - jmp to start hocche na
+; a program to sort 10 numbers in ascending order
+
+display macro msg				; display - user defined macro
+	mov ah, 09h				; display string function
+	mov dx, offset msg			; initialize dx to msg
+	int 21h					; call DOS service
+endm
+
+exit macro
+     mov ah, 4ch
+     mov al, 0h
+     int 21h
+endm
+
+_data segment 					; data - name of user defined segment
+	cr	equ	0dh			; ASCII code for carriage return
+	lf	equ	0ah			; ASCII code for line feed
+	tab	equ	09h			; ASCII code for tab
+
+	msg  db cr,lf,'How many numbers are to be sorted (xx)?', '$'
+	msg1 db cr, lf, 'Enter numbers to be sorted: ', '$'
+    msg2 db cr, lf, 'Numbers after sorting:', cr, lf, '$'
+    msg3 db tab, '$'
+	msg4 db cr, lf, lf,	'Now press a if you want to type again or x to exit - $'
+	msg5 db cr, lf, 'You pressed x so the program has exit. $'
+    msg6 db cr, lf, 'Ah! Wrong choice! Its out of range! $'
+	temp dw   ?
+	N    dw   ?
+    ntable dw   50 dup (?)
+    restable db   50 dup ('$')
+endm   						; end of data segment
+
+_code segment					; code - name of user defined segment
+assume ds: _data, cs: _code		; initialize ds and cs to segments
+start:
+	    mov ax, _data				; initialize ds to  the data segment
+	    mov ds, ax				
+rstart:
+;======================================================================================= 
+; read the value of N
+        display msg
+      	call readnum
+      	mov N,SI
+        ;mov ch, 0
+        mov cx, N				; load N in count register - ekhane change kore number select korte hobe *
+        cmp cx,0
+        je again
+        mov di, offset ntable		; load effective address of ntable in pointer
+;============================================================================================
+;Read N two-digit numbers and save them in ntable
+rdnxt:						
+        display msg1
+      	;readnum temp
+      	call readnum
+      	;mov N,SI
+      	;mov temp, SI
+      	;mov ax, SI
+      	mov [di], SI
+      	inc di
+      	loop rdnxt
+        ;mov dh, 0
+      	mov dx, N ; DX holds the value of N
+;===========================================================================================
+;Sorting begins here
+sort: 						; function to sort the numbers
+        dec dx
+      	cmp dx, 0
+     	je  print
+        ;mov ch,0
+        mov cx, N			; * for ascending
+      	dec cx
+      	mov di, offset ntable
+      
+cnt_pass:						; function to compare two numbers
+      	mov ax, [di]
+      	mov bx, [di+1]
+      	cmp ax, bx
+      	jle skip 			; descending / ascending - jge/jle
+      	mov [di], bx
+      	mov [di+1], ax
+skip:
+      	inc di
+      	loop cnt_pass
+		jmp sort
+print:						; function to print the sorted numbers      
+        display msg2
+      	;mov ch, 0			; * for descending
+      	mov cx, N
+      	mov si, offset restable
+      	mov di, offset ntable
+loop1:
+     	;mov  ah, 0
+      	mov  ax, [di]
+      	call hex2asc			; Hexadecimal to ASCII conversion 
+      	display restable
+      	inc  di
+      	display msg3
+      	loop loop1
+;===========================================================================
+again:
+     display msg4        ; Now press a if you want to type again or x to exit -
+     mov ah, 01h         ; get input from keyboard
+     int 21h
+     cmp al, 'a'         ; compare with ASCII value of s
+     je rstart            ; if equal jump to start function
+     cmp al, 'x'         ; compare with ASCII value of x
+     je exit             ; if equal jump to exit function
+wrong:
+     display msg6		; Ah! Wrong choice! Its out of range!
+     jmp again
+;===========================================================================
+exit:      
+     display msg5        ; You pressed x so the program has exit.
+     exit                ; exit program
+;===========================================================================
+hex2asc proc near		 ; function to convert hexadecimal to ASCII string
+	 pusha					; save all registers
+     mov cx, 00h				; counter for intermediate data pushed
+	 mov bx, 0ah				; load 10 in bl
+rpt1:
+	mov dx, 00h
+	div bx					; divide deci by 10
+	add dl, '0'				; convert remainder to ASCII
+	push dx					; store ASCII digit on to the stack
+	inc cx					; update counter
+	cmp ax, 0ah				; is sum less than or equal to 10
+	jge rpt1				; if yes, perform conversion
+	add al, '0'				; convert last digit to ASCII
+	mov [si], al			; store last digit
+rpt2:
+	pop ax					; pop data
+	inc si					; advance result string pointer
+	mov [si], al			; store in result
+	loop rpt2
+	inc si
+	mov al, '$'
+	mov [si], al				; append end of string
+    popa						; restore the registers
+    ret						; return to the main function
+hex2asc endp					; end of procedure
+;==========================================================================
+;reading Ndigit Number
+readnum proc near
+    push ax
+    push bx
+    push cx
+    mov SI,0
+   	agn:mov ah, 01h
+    int 21h         ; 01 DOS function call to read a character
+    cmp al,0dh
+    je last
+    sub al, '0'     ; convert the ASCII char. into digit
+    mov cl,al
+    mov bx, 0ah
+    mov ax,SI
+    mul bx          ; multiply the digit by 10
+    mov SI, ax     ; save the result in num variable
+    mov ch,0
+    add SI,cx
+    jmp agn:
+last:
+    pop cx						; restore the registers
+    pop bx
+    pop ax
+    ret						; return to the main function
+readnum endp
+
+endp
+
+ends							; end of segment
+end start						; end of program
